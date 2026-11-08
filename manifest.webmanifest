@@ -1,0 +1,12 @@
+{
+  "name": "Image Editor",
+  "short_name": "Editor",
+  "start_url": "./image-editor.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101116",
+  "theme_color": "#8c1d3a",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
