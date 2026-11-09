@@ -2,7 +2,7 @@
 
 To use on browser without installing the app, download the .html file;
 
-To install the app, download and run "Image.Editor\_3.8.0x64-setup.exe"
+To install the app, download and run "Image.Editor\_3.8.0_x64-setup.exe"
 
 
 
