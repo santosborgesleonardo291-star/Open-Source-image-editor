@@ -8,6 +8,29 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#8c1d3a">
 <style>
+  /* Bottom-left footer: version in grey, then the connection light */
+  .footer {
+    position: fixed; left: 10px; bottom: 6px; z-index: 50; pointer-events: none;
+    display: flex; align-items: center; gap: 10px; font-size: 11px; color: #6b6e80;
+  }
+  .net { display: flex; align-items: center; gap: 5px; }
+  .net-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #e04848;
+    box-shadow: 0 0 6px rgba(224, 72, 72, .6);
+  }
+  .net-dot.on { background: #3ccf6b; box-shadow: 0 0 6px rgba(60, 207, 107, .6); }
+
+  /* Update notice shown at the top when a newer release exists */
+  .upd-banner {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 90;
+    max-width: 92vw; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    background: var(--panel); border: 1px solid var(--accent-2); border-radius: 12px;
+    padding: 10px 14px; box-shadow: 0 12px 32px rgba(0, 0, 0, .5); font-size: 13px;
+  }
+  .upd-banner a { color: #ffb3c4; font-weight: 600; }
+  .upd-banner button { padding: 4px 10px; font-size: 12px; }
+</style>
+<style>
   :root {
     --bg: #101116; --panel: #181a23; --panel-2: #222431; --line: #2a2d3d;
     --text: #f1f1f7; --muted: #8c8fa3; --accent: #8c1d3a; --accent-2: #c2395e;
@@ -435,6 +458,19 @@
     </div>
     <aside class="adv-panel" id="advPanel"></aside>
   </div>
+</div>
+
+<!-- Bottom-left footer: version and connection status -->
+<div class="footer">
+  <span id="verLabel"></span>
+  <span class="net"><span class="net-dot" id="netDot"></span><span id="netText">Online</span></span>
+</div>
+
+<!-- Update notice -->
+<div class="upd-banner" id="updBanner" hidden>
+  <span id="updText"></span>
+  <a id="updLink" target="_blank" rel="noopener">Open releases</a>
+  <button id="updClose">Dismiss</button>
 </div>
 
 <!-- Warning shown before replacing the photo -->
@@ -2010,6 +2046,62 @@
   setButtons();
   updateStatus();
   applyZoom();
+})();
+</script>
+<script>
+(() => {
+  // ---------- Version, connection light and update check ----------
+  const APP_VERSION = 'Beta 3.8';
+  // Newest release of any kind (pre-releases included); the "latest" endpoint skips pre-releases
+  const RELEASES_API = 'https://api.github.com/repos/santosborgesleonardo291-star/Open-Source-image-editor/releases?per_page=1';
+  const RELEASES_PAGE = 'https://github.com/santosborgesleonardo291-star/Open-Source-image-editor/releases';
+
+  const dot = document.getElementById('netDot');
+  const netText = document.getElementById('netText');
+  const banner = document.getElementById('updBanner');
+  const updText = document.getElementById('updText');
+  document.getElementById('verLabel').textContent = APP_VERSION;
+  document.getElementById('updLink').href = RELEASES_PAGE;
+  document.getElementById('updClose').onclick = () => { banner.hidden = true; };
+
+  function setOnline(on) {
+    dot.classList.toggle('on', on);
+    netText.textContent = on ? 'Online' : 'Offline';
+  }
+  setOnline(navigator.onLine);
+  window.addEventListener('online', () => { setOnline(true); checkUpdate(); });
+  window.addEventListener('offline', () => setOnline(false));
+
+  // Pull the numbers out of a name like "v3.9" or "Beta 3.8"
+  const nums = s => (s.match(/\d+/g) || []).map(Number);
+  function isNewer(remote, local) {
+    for (let i = 0; i < Math.max(remote.length, local.length); i++) {
+      const a = remote[i] || 0, b = local[i] || 0;
+      if (a !== b) return a > b;
+    }
+    return false;
+  }
+
+  async function checkUpdate() {
+    if (!navigator.onLine) return;
+    try {
+      const res = await fetch(RELEASES_API, { headers: { Accept: 'application/vnd.github+json' } });
+      if (!res.ok) return;
+      const list = await res.json();
+      const rel = Array.isArray(list) ? list[0] : null;
+      if (!rel) return;
+      let remote = nums(rel.tag_name || '');
+      if (!remote.length) remote = nums(rel.name || '');
+      const local = nums(APP_VERSION);
+      if (remote.length && isNewer(remote, local)) {
+        updText.textContent = `Version ${rel.tag_name || rel.name} is out. You have ${APP_VERSION}. Download the new version to update.`;
+        banner.hidden = false;
+      }
+    } catch (e) {
+      // Offline or blocked: stay quiet
+    }
+  }
+  checkUpdate();
 })();
 </script>
 <script>
